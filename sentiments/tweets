@@ -1,0 +1,61 @@
+#!/usr/bin/env python3
+
+import os
+import sys
+
+from analyzer import Analyzer
+from termcolor import colored
+from helpers import get_user_timeline
+
+
+def main():
+    # Proper usage check:
+    if len(sys.argv) != 2 or not sys.argv[1].startswith("@"):
+        sys.exit(str.format("usage: {} @screen_name", sys.argv[0]))
+
+    # Twitter username for analyzing
+    screen_name = sys.argv[1]
+    # Total score of analyzed tweets
+    total_score = 0
+
+    try:
+        tweets = get_user_timeline(screen_name, 50)
+    except Exception as e:
+        sys.exit("Exception has been raised: %s" % e)
+    
+    if tweets == None:
+        sys.exit("Couldn't get tweets")
+
+
+    # absolute paths to lists
+    positives = os.path.join(sys.path[0], "positive-words.txt")
+    negatives = os.path.join(sys.path[0], "negative-words.txt")
+
+    # Analyzing tweets
+    analyzer = Analyzer(positives, negatives)
+
+    print("Recent tweets of %s:" % screen_name)
+    for tweet in tweets:
+        score = analyzer.analyze(tweet)
+        total_score += score
+        if score > 0.0:
+            print("\nScore: %d" % score)
+            print(colored(tweet, "green"))
+        elif score < 0.0:
+            print("\nScore: %d" % score)
+            print(colored(tweet, "red"))
+        else:
+            print("\nScore: %d" % score)
+            print(colored(tweet, "yellow"))
+    print("\n\nCONCLUSION: ", end="")
+    if total_score > 0.0:
+        print("%s is a nice person!" % screen_name)
+    elif total_score < 0.0:
+        print("%s is a rude person!" % screen_name)
+    else:
+        print("%s is booring!" % screen_name)
+        
+
+
+if __name__ == "__main__":
+    main()
